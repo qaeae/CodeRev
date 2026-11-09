@@ -1,0 +1,51 @@
+name: 文档纠错
+description: 错别字、口径不一致、链接失效、表述歧义
+title: "[文档] "
+labels: ["documentation"]
+body:
+  - type: input
+    id: location
+    attributes:
+      label: 文档位置
+      description: 文件路径 + 章节，有行号更好
+      placeholder: docs/b/03-change-ledger.md 第 3 节「自动计算列」
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题是什么
+      description: 贴原文，说明为什么有问题
+      placeholder: 原文写「确认用时 = 提议日期 − 定级日期」，应为「客户签字日期 − 定级日期」。
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: 建议改成
+      description: 直接给可以复制的替换文案最好
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: 影响面
+      description: 影响口径的改动会同步到台账、周报、汇总三处，请如实选择
+      options:
+        - 仅文字（错别字、措辞）
+        - 影响口径（数字定义、判定规则）
+        - 影响模板字段（变更单 / 台账 / 周报结构）
+        - 影响链接或结构（目录、引用）
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认
+      options:
+        - label: 我已确认这不是「口径变更」——如果是，请改用「功能/方案建议」模板，并说明影响的三处文档
+          required: false

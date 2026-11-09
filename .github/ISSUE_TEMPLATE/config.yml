@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 第一次参与？先看新人上手
+    url: https://github.com/qaeae/CodeRev/blob/main/docs/onboarding.md
+    about: 阅读顺序、分支模型、第一次提交怎么写
+  - name: 项目全貌与已锁定决策
+    url: https://github.com/qaeae/CodeRev/blob/main/docs/00-overview.md
+    about: 做什么、为什么先 B、当前进度、14 条已锁定决策
+  - name: 变更流程怎么走
+    url: https://github.com/qaeae/CodeRev/blob/main/docs/b/01-change-management-design.md
+    about: 变更单七段结构、六维定级、挂起与升级规则
