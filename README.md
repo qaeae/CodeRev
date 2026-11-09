@@ -3,6 +3,8 @@
 > 面向 10–200 人研发团队的「PR 审查 + 测试闭环」工作流。
 > 当前策略：**先跑变更追溯（B），再做 PR 审查（A）**。
 
+**刚加入？从这里开始 → [项目全貌](docs/00-overview.md) ｜ [新人上手](docs/onboarding.md)**
+
 ---
 
 ## 当前阶段
@@ -38,7 +40,12 @@
 .
 ├── README.md                  # 本文件
 ├── docs/
+│   ├── 00-overview.md         # 项目全貌：做什么、为什么、到哪一步
+│   ├── onboarding.md          # 新人上手：读什么、怎么提交
 │   ├── README.md              # 文档索引与阅读顺序
+│   ├── design/                # 设计方案（跨轨道）
+│   │   ├── platform-vision.md        # 平台愿景：需求→切片→联调→拍板
+│   │   └── change-impact-engine.md   # 变更影响引擎设计（V2）
 │   ├── a/                     # A 轨道（PR 审查）
 │   │   └── prd-pr-review.md
 │   └── b/                     # B 轨道（变更追溯）
