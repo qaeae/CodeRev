@@ -1,0 +1,67 @@
+name: 功能 / 方案建议
+description: 新的功能想法、流程改进、设计决策调整
+title: "[建议] "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: track
+    attributes:
+      label: 属于哪条轨道
+      options:
+        - B 变更追溯
+        - A PR 审查
+        - 平台 / 通用（含 design 文档）
+        - 不确定
+    validations:
+      required: true
+
+  - type: textarea
+    id: scenario
+    attributes:
+      label: 要解决的场景
+      description: 谁、在什么情况下、现在怎么办、痛在哪。有人名或项目名可以脱敏
+      placeholder: 项目经理每周五要手工从 5 个项目台账里抄数字做汇总，平均 40 分钟，且经常抄错口径。
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+      description: 不用写实现细节，写清楚「做成什么样就算解决」
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternative
+    attributes:
+      label: 考虑过的替代方案
+      description: 为什么不做那个；没有可以写「无」
+
+  - type: dropdown
+    id: cost
+    attributes:
+      label: 预估改动量
+      options:
+        - 小（半天内，改文字/加字段）
+        - 中（1–3 天，改表单或加一页）
+        - 大（3 天以上，涉及流程或系统）
+        - 不确定
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 我已读过 `docs/00-overview.md` 的「已锁定的决策」，本建议不与之冲突（若冲突，请在下面说明）
+          required: true
+        - label: 若是口径变更，我已列出需要同步修改的文档（台账 / 周报 / 汇总 / 变更单）
+          required: false
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: 若推翻已锁定决策，请说明
+      description: 原决策是什么、为什么现在要改、改完谁需要重新培训
