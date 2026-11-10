@@ -1,84 +1,93 @@
 # CodeRev
 
-> 面向 10–200 人研发团队的「PR 审查 + 测试闭环」工作流。
-> 当前策略：**先跑变更追溯（B），再做 PR 审查（A）**。
+**开源免费的 PR 审查与变更追溯工具。自托管、BYOK、代码不出内网。**
 
-**刚加入？从这里开始 → [项目全貌](docs/00-overview.md) ｜ [新人上手](docs/onboarding.md)**
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Status](https://img.shields.io/badge/status-design%20stage-orange.svg)](ROADMAP.md)
+
+> 当前是**设计阶段**：文档齐全，代码未开始。现在参与，你影响的是"它长成什么样"。
+> Before you start: everything here is documented in Chinese. English issues and PRs are welcome.
 
 ---
 
-## 当前阶段
+## 它解决什么问题
 
-| 轨道 | 内容 | 状态 |
+AI 审查工具已经很多，但有三个坑没人填：
+
+1. **误报淹没一切**。每天 5 条"这行建议加个注释"，团队第二周就把它关了。
+2. **审查和需求脱节**。模型不知道这个 PR 服务哪条需求，只能按通用规则挑毛病。
+3. **规则不可控**。想加一条团队规范，得去某个后台点表单，不能 review、不能 diff、不能回滚。
+
+CodeRev 的做法：
+
+- **每条意见必须可定位**：文件、行号、规则 ID、置信度。定位不到的结论直接丢弃。
+- **规则即代码**：`rules/*.yaml` 跟仓库走，社区提 PR 就能加规则，每条规则带 golden test。
+- **自托管优先**：Docker 起一个，接自己的模型 key，代码不出内网。
+
+---
+
+## 两条产品线
+
+| | **A 轨道：PR 审查** | **B 轨道：变更追溯** |
 |---|---|---|
-| **B** | 变更单 / 变更台账 / 周报 / 多项目汇总 / 两周启动方案 | 观察期（2 周），人工跑流程 |
-| **A** | PR 审查 MVP（PRD 已出，代码未开始） | 等待启动判据 |
+| 解决 | PR 自动审查、风险摘要、测试建议 | 需求变更从提出到签字的全链路留痕 |
+| 形态 | GitHub Action / 自托管服务 | 变更单 + 台账 + 周报（模板） |
+| 状态 | PRD 完成，代码未开始 | 设计与模板完成，观察期使用中 |
 
-先做 B 的原因：B 门槛低（Excel + 表单即可开始）、两周能验证，且它产出的「变更 ↔ 模块 ↔ 需求」数据，是 A 唯一难以被同类产品替代的差异化。
-
----
-
-## 分支约定
-
-| 分支 | 用途 | 合并策略 |
-|---|---|---|
-| `main` | 仓库骨架与索引，**不直接提交业务内容** | 只接受评审确认后的合并 |
-| `feat/b-change-trace` | B 轨道：变更追溯的全部文档与后续实现 | 经负责人确认后合并 `main` |
-| `feat/a-pr-review` | A 轨道：PR 审查 PRD 与后续代码 | 经负责人确认后合并 `main` |
-
-**提交规则**
-
-1. 所有改动先提交到对应子分支，不直接推 `main`。
-2. 合并 `main` 由项目负责人确认后执行，不由开发者自行合并。
-3. 一次合并只做一件事，合并前跑一遍文档自检（链接、口径、版本号一致）。
+A 单独做只是"又一个审查工具"；接上 B 的「变更 ↔ 模块 ↔ 需求」数据，它才能说出"这个 PR 服务的是哪条需求、这条需求上个月改过三次"。
 
 ---
 
-## 目录结构
+## 三条设计原则
 
-```
-.
-├── README.md                  # 本文件
-├── docs/
-│   ├── 00-overview.md         # 项目全貌：做什么、为什么、到哪一步
-│   ├── onboarding.md          # 新人上手：读什么、怎么提交
-│   ├── README.md              # 文档索引与阅读顺序
-│   ├── design/                # 设计方案（跨轨道）
-│   │   ├── platform-vision.md        # 平台愿景：需求→切片→联调→拍板
-│   │   └── change-impact-engine.md   # 变更影响引擎设计（V2）
-│   ├── a/                     # A 轨道（PR 审查）
-│   │   └── prd-pr-review.md
-│   └── b/                     # B 轨道（变更追溯）
-│       ├── 01-change-management-design.md
-│       ├── 02-change-order-form.md
-│       ├── 03-change-ledger.md
-│       ├── 04-weekly-report.md
-│       ├── 05-portfolio-summary.md
-│       └── 06-kickoff-plan.md
-└── assets/                    # 可打印/可填写的原始 Office 文件（仅 B 分支）
-```
-
-> 目录在 `main` 上只体现骨架；`docs/a/`、`docs/b/`、`assets/` 分别落在对应子分支。
+1. **宁可少报，不可误报**。误报一次，用户流失的成本远高于漏报一次的收益。
+2. **默认不阻断**。只评论、不卡合并；阻断是用户显式打开的开关。
+3. **配置跟着仓库走**。`.coderev.yml` + `rules/`，能 diff、能 review、能回滚，不需要后台点表单。
 
 ---
 
-## 已锁定的口径（改动需评审）
+## 文档
 
-| 项 | 结论 |
+| 你想 | 读 |
 |---|---|
-| 报价 | 按合同单价**人工核定**，一律**不含税** |
-| 客户确认时限 | **5 个工作日** |
-| 超期处理 | 变更**挂起**，不进入排期 |
-| 升级红线 | 挂起满 **10 个工作日** → 上报客户高层 |
-| 澄清类 | 由**产品经理**确认，无需客户签字 |
-| 台账粒度 | 每个项目一份；跨项目**双周**人工汇总 |
-| 变更编号 | `项目代号-CHG-YYYYMMDD-NN` |
+| 30 分钟了解全貌 | [项目全貌](docs/00-overview.md) |
+| 第一次参与 | [新人上手](docs/onboarding.md) |
+| 看产品终局 | [平台愿景](docs/design/platform-vision.md) |
+| 看审查引擎设计 | [PR 审查 PRD](https://github.com/qaeae/CodeRev/blob/feat/a-pr-review/docs/a/prd-pr-review.md) |
+| 看变更流程设计 | [变更管理设计](https://github.com/qaeae/CodeRev/blob/feat/b-change-trace/docs/b/01-change-management-design.md) |
+| 看开源化改造 | [开源化改造](docs/design/open-source-pivot.md) |
+| 知道下一步做什么 | [路线图](ROADMAP.md) |
 
 ---
 
-## 术语
+## 参与
 
-- **B / A**：变更为先（B）、审查为后（A）的两条产品轨道。
-- **变更单**：一次变更的结构化记录，兼作商务凭证（报价 + 客户签字）。
-- **挂起**：已定级但客户未在时限内确认的变更，从排期中摘出。
-- **AC**：验收标准（Acceptance Criteria），需求可测试的最小断言。
+- 提 issue：[文档纠错](https://github.com/qaeae/CodeRev/issues/new?template=doc-fix.yml) ｜ [功能建议](https://github.com/qaeae/CodeRev/issues/new?template=feature-request.yml)
+- 提 PR：先读 [CONTRIBUTING.md](CONTRIBUTING.md)，分支模型见下
+- 治理与决策：[GOVERNANCE.md](GOVERNANCE.md)
+- 安全问题：[SECURITY.md](SECURITY.md)（**不要公开提 issue**）
+- 行为准则：[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+
+### 分支模型
+
+| 分支 | 内容 |
+|---|---|
+| `main` | 门户文档与索引，只接受评审后的合并 |
+| `feat/a-pr-review` | A 轨道：PR 审查 |
+| `feat/b-change-trace` | B 轨道：变更追溯 |
+
+从子分支切工作分支，不要直接改子分支；合并到 `main` 由 maintainer 执行。
+
+---
+
+## 许可
+
+代码与文档采用 [Apache License 2.0](LICENSE)。
+**商标不在此列**——可以 fork、可以商用，但不能用 CodeRev 的名字发布，见 [TRADEMARK.md](TRADEMARK.md)。
+
+---
+
+## 赞助
+
+项目由贡献者业余维护。赞助用于 CI 分钟数、测试用模型 API、域名。见 [.github/FUNDING.yml](.github/FUNDING.yml)。

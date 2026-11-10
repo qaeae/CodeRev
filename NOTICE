@@ -1,0 +1,17 @@
+CodeRev
+Copyright 2026 The CodeRev Contributors
+
+This product includes software developed at the CodeRev project
+(https://github.com/qaeae/CodeRev).
+
+Third-party components
+----------------------
+
+PR-Agent (https://github.com/The-PR-Agent/pr-agent)
+  Licensed under a permissive license (MIT / Apache-2.0 — see upstream LICENSE).
+  Used as the review engine; version is pinned in the deployment manifests.
+  No modifications are distributed by default.
+
+Contributor Covenant Code of Conduct v2.1
+  https://www.contributor-covenant.org/version/2/1/code_of_conduct/
+  Licensed under CC BY 4.0.
