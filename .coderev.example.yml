@@ -1,0 +1,25 @@
+# CodeRev 配置示例：复制为 .coderev.yml 后修改
+version: 1
+
+review:
+  # mock 用于离线试跑；真实使用改成 openai（任何 OpenAI 兼容接口都行）
+  provider: openai
+  model: deepseek-chat
+  base_url: https://api.deepseek.com/v1
+
+  # 规则包路径（相对仓库根目录）
+  rules: rules/examples
+
+  # 只报告置信度不低于该值的问题（0-1）
+  min_confidence: 0.6
+
+  # 单次审查最多展示多少条
+  max_findings: 8
+
+  # 命中即跳过审查的路径
+  ignore_paths:
+    - "**/generated/**"
+    - "**/*.lock"
+
+  # false 时只打印评论，不写回 PR（便于本地调试）
+  post: true

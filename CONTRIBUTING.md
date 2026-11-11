@@ -32,11 +32,34 @@
 ```bash
 git clone git@github.com:qaeae/CodeRev.git
 cd CodeRev
-cp .env.example .env          # 填 LLM key（BYOK）
-docker compose up -d          # Postgres + Redis + app
+pip install -e ".[dev]"
+pytest -q                     # 17 个用例，全部离线
 ```
 
-> 当前还没有可运行的服务，README 会随版本更新。
+离线跑一次完整审查（不需要 API key）：
+
+```bash
+coderev review --diff tests/fixtures/example.diff --provider mock \
+  --mock-response tests/fixtures/mock-response.json \
+  --rules rules/examples --markdown
+```
+
+### 代码结构
+
+```
+src/coderev/
+├── diff.py        解析 unified diff，产出「哪些行是新增的」
+├── rules.py       加载 / 匹配规则包（rules-as-code）
+├── prompt.py      拼 prompt：系统约束 + 规则 + diff
+├── providers/     模型适配（mock 离线 / OpenAI 兼容）
+├── validate.py    守卫：路径、行号、置信度、去重、截断
+├── render.py      渲染成 GitHub 评论
+└── cli.py         命令行入口
+tests/             单元测试 + fixtures（真实 diff + 模型响应）
+rules/examples/    示例规则包
+```
+
+**加功能前先想清楚它属于哪一层**：解析、规则、提示、校验、渲染各自的边界很清楚，跨层改动要先开 issue。
 
 ---
 

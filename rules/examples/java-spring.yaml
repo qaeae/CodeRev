@@ -1,0 +1,44 @@
+version: 1
+pack: core/java-spring
+rules:
+  - id: java-spring/transaction-boundary
+    name: 事务边界内发起外部调用
+    severity: warning
+    language: java
+    applies_to:
+      - "src/main/java/**/*.java"
+    intent: |
+      在 @Transactional 方法内同步调用外部 HTTP/RPC 会拉长事务持有时间，
+      可能导致连接池耗尽与锁等待。应移到事务外，或改为事件驱动的异步调用。
+    examples:
+      bad: |
+        @Transactional
+        public void pay(Order o) {
+            paymentClient.charge(o.getAmount());
+            repository.save(o);
+        }
+      good: |
+        public void pay(Order o) {
+            repository.save(o);           // 只做本地事务
+        }
+
+        @TransactionalEventListener
+        public void onOrderSaved(OrderSaved e) {
+            paymentClient.charge(e.amount());  // 事务外发起
+        }
+
+  - id: java-spring/hardcoded-secret
+    name: 硬编码密钥
+    severity: blocker
+    language: java
+    applies_to:
+      - "src/main/java/**/*.java"
+      - "src/test/**/*.java"
+    intent: |
+      把密钥、token、密码直接写进源码，会随代码进入版本库与构建产物，
+      无法轮换，且在日志与报错中容易被带出。应从配置中心或环境变量读取。
+    examples:
+      bad: |
+        String apiKey = "sk-live-1234567890";
+      good: |
+        String apiKey = System.getenv("PAYMENT_API_KEY");

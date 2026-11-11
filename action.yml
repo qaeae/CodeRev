@@ -1,0 +1,53 @@
+name: CodeRev
+description: AI PR review with traceable findings (self-hosted, bring your own model key)
+
+branding:
+  icon: check-circle
+  color: blue
+
+inputs:
+  api-key:
+    description: 模型 API key（OpenAI / DeepSeek / 任意兼容接口）
+    required: true
+  provider:
+    description: mock 或 openai
+    required: false
+    default: openai
+  model:
+    description: 模型名，如 deepseek-chat
+    required: false
+    default: ""
+  base-url:
+    description: OpenAI 兼容接口地址
+    required: false
+    default: "https://api.openai.com/v1"
+  rules:
+    description: 规则包路径
+    required: false
+    default: rules/examples
+  github-token:
+    description: 用于回写评论的 token，默认使用 github.token
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install CodeRev
+      shell: bash
+      run: pip install "${{ github.action_path }}"
+
+    - name: Review pull request
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token || github.token }}
+        CODEREV_API_KEY: ${{ inputs.api-key }}
+        CODEREV_MODEL: ${{ inputs.model }}
+        CODEREV_BASE_URL: ${{ inputs.base-url }}
+      run: |
+        coderev pr \
+          --repo "${{ github.repository }}" \
+          --pr "${{ github.event.pull_request.number }}" \
+          --provider "${{ inputs.provider }}" \
+          --rules "${{ inputs.rules }}" \
+          --post

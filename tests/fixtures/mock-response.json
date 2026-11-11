@@ -1,0 +1,54 @@
+{
+  "summary": "为支付流程增加幂等键校验，改动集中在 OrderService 与 PaymentClient。",
+  "risk_level": "medium",
+  "findings": [
+    {
+      "path": "src/main/java/com/acme/order/OrderService.java",
+      "line_start": 42,
+      "line_end": 45,
+      "severity": "warning",
+      "rule_id": "java-spring/transaction-boundary",
+      "title": "事务内同步调用支付接口",
+      "detail": "pay() 在 @Transactional 内调用 paymentClient.charge()，事务持有时间随外部延迟增长。",
+      "suggestion": "先落库为 PENDING，提交后用事件监听异步发起支付。",
+      "confidence": 0.82
+    },
+    {
+      "path": "src/unknown/NotInDiff.java",
+      "line_start": 1,
+      "severity": "warning",
+      "rule_id": "java-spring/transaction-boundary",
+      "title": "路径不在 diff 中",
+      "detail": "should be dropped",
+      "confidence": 0.9
+    },
+    {
+      "path": "src/main/java/com/acme/order/OrderService.java",
+      "line_start": 999,
+      "severity": "warning",
+      "rule_id": "java-spring/transaction-boundary",
+      "title": "行号不在新增行中",
+      "detail": "should be dropped",
+      "confidence": 0.9
+    },
+    {
+      "path": "src/main/java/com/acme/order/OrderService.java",
+      "line_start": 43,
+      "severity": "suggestion",
+      "rule_id": "java-spring/transaction-boundary",
+      "title": "置信度过低",
+      "detail": "should be dropped",
+      "confidence": 0.3
+    },
+    {
+      "path": "src/main/java/com/acme/order/OrderService.java",
+      "line_start": 42,
+      "line_end": 45,
+      "severity": "warning",
+      "rule_id": "java-spring/transaction-boundary",
+      "title": "重复意见",
+      "detail": "should be deduped",
+      "confidence": 0.8
+    }
+  ]
+}

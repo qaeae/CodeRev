@@ -4,10 +4,67 @@
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Status](https://img.shields.io/badge/status-design%20stage-orange.svg)](ROADMAP.md)
+[![Status](https://img.shields.io/badge/status-v0.2%20alpha-orange.svg)](ROADMAP.md)
 
-> 当前是**设计阶段**：文档齐全，代码未开始。现在参与，你影响的是"它长成什么样"。
+> **v0.2 可用**：核心流水线 + GitHub Action 已打通，可在真实 PR 上出评论（端到端验证待做）。
 > Before you start: everything here is documented in Chinese. English issues and PRs are welcome.
+
+---
+
+## 30 秒试跑（不需要 API key）
+
+```bash
+git clone git@github.com:qaeae/CodeRev.git && cd CodeRev
+pip install -e ".[dev]"
+
+# 用内置 mock 模型跑一遍完整流水线
+coderev review \
+  --diff tests/fixtures/example.diff \
+  --provider mock \
+  --mock-response tests/fixtures/mock-response.json \
+  --rules rules/examples \
+  --markdown
+```
+
+输出是一条可直接贴到 PR 的评论：命中 1 条问题，自动丢弃 4 条（路径不在 diff、行号不存在、置信度不足、重复）。
+
+接真模型只需换参数：
+
+```bash
+export CODEREV_API_KEY=sk-...
+coderev review --diff pr.diff --provider openai --model deepseek-chat \
+  --base-url https://api.deepseek.com/v1 --rules rules/examples
+```
+
+---
+
+## 接入 GitHub
+
+```yaml
+# .github/workflows/coderev.yml
+on: [pull_request]
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: qaeae/CodeRev@main
+        with:
+          api-key: ${{ secrets.CODEREV_API_KEY }}
+          model: deepseek-chat
+          base-url: https://api.deepseek.com/v1
+```
+
+行为：
+
+- 每次 PR 生成**一条摘要评论**（同一个 PR 重复跑会原地更新，不堆积）；
+- 每条问题挂一条 **inline 评论**，带文件、行号、规则、置信度；
+- 无法定位或置信度不足的意见**直接丢弃**，不会出现在 PR 里。
+
+详见 [部署文档](docs/deploy/action.md)。配置写 `.coderev.yml`（见 [示例](.coderev.example.yml)），优先级：命令行 > 配置文件 > 默认值。
 
 ---
 
