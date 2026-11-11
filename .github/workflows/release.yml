@@ -25,18 +25,27 @@ jobs:
         run: echo "name=${{ inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
 
       - name: Extract notes from CHANGELOG
+        env:
+          TAG: ${{ steps.tag.outputs.name }}
         run: |
           set -euo pipefail
-          TAG="${{ steps.tag.outputs.name }}"
-          awk -v ver="$TAG" '
-            $0 ~ "^## \\[" ver "\\]" { flag = 1; next }
-            flag && /^## \[/ { exit }
-            flag { print }
-          ' CHANGELOG.md > notes.md
-          if [ ! -s notes.md ]; then
-            echo "::error::CHANGELOG.md 里找不到 $TAG 的段落"
-            exit 1
-          fi
+          python3 - <<'PY' > notes.md
+          import os
+          import re
+          import sys
+
+          tag = os.environ["TAG"]
+          version = tag[1:] if tag.startswith("v") else tag
+          text = open("CHANGELOG.md", encoding="utf-8").read()
+          match = re.search(
+              rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|\Z)",
+              text,
+              re.S | re.M,
+          )
+          if not match:
+              sys.exit(f"CHANGELOG.md 缺少 {version} 的段落")
+          print(match.group(1).strip())
+          PY
           head -20 notes.md
 
       - name: Create GitHub release
