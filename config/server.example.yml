@@ -1,0 +1,19 @@
+# 服务器侧配置：允许使用本服务的仓库
+#
+# 这份文件由**服务方**维护，不随被审仓库走——仓库无权把自己加进白名单。
+# 修改后无需重启（按文件 mtime 自动重载），建议用 volume 挂载：
+#   -v ./config:/app/config:ro
+#
+# 复制为 config/server.yml 后修改。
+
+repos:
+  - owner/project-a
+  - owner/project-b
+
+limits:
+  # 单次审查的变更行数上限；超过则只审高风险文件，并在评论里说明
+  max_changed_lines: 1500
+
+server:
+  workers: 2
+  db: data/coderev.db

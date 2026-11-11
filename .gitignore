@@ -22,6 +22,10 @@ htmlcov/
 *.pem
 *.key
 
+# 运行时数据（SQLite 等）
+data/
+config/server.yml
+
 # 本地生成物与预览
 .dsh-office-*/
 *.tmp

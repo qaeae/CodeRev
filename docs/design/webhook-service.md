@@ -35,6 +35,10 @@
 | diff 来源 | **调 API 拉取** | payload 只有元数据；也不信任 payload 里的内容 |
 | 并发 | **同一 PR 串行** | 幂等发布是"先删后建"，并发会互相踩 |
 | 部署形态 | **单实例** | 多实例需要分布式锁，v0.3 不做 |
+| 大 PR 处理 | **服务端限流**：变更行数超过阈值只审高风险文件，并在评论里说明 | 与 PRD 的"不做全仓索引"一致，避免单次消耗失控 |
+| 白名单来源 | **服务器侧 YAML**（`config/server.yml`），文件变更自动重载 | 见 §6 的安全说明：不能由仓库自己声明 |
+
+> **为什么白名单不能放仓库内的 `.coderev.yml`**：那等于让被审仓库自己给自己授权。任何人只要能给某个你 PAT 有权限的仓库加 webhook，就能白嫖你的模型额度并往 PR 写评论。允许清单必须由**服务方**掌握。
 
 ---
 
@@ -99,7 +103,7 @@ sequenceDiagram
 |---|---|
 | 验签 | `X-Hub-Signature-256` = `sha256=` + HMAC-SHA256(secret, body)，`hmac.compare_digest` 比较 |
 | 请求体大小 | 上限 1 MiB，超出 413 |
-| 仓库白名单 | `CODEREV_REPOS=owner/a,owner/b`；不在名单直接 204，不落库 |
+| 仓库白名单 | `config/server.yml` 的 `repos:` 列表；不在名单直接 204，不落库（**服务侧策略，仓库无权修改**） |
 | 密钥来源 | `CODEREV_WEBHOOK_SECRET`、`GITHUB_TOKEN` 只从环境变量读，不写文件、不打日志 |
 | 代码执行 | 审查进程**只读 diff**，不执行仓库代码（与 CLI 一致） |
 | 日志脱敏 | 不打印 token、签名、payload 全文；只记 delivery id、repo、PR 号、结果 |
@@ -132,14 +136,34 @@ sequenceDiagram
 
 ## 9. 配置
 
+### 9.1 服务器配置（`config/server.yml`，可热重载）
+
+```yaml
+# 允许使用本服务的仓库（必须由服务方维护）
+repos:
+  - owner/project-a
+  - owner/project-b
+
+limits:
+  max_changed_lines: 1500   # 超过则只审高风险文件，并在评论里说明
+
+server:
+  workers: 2
+  db: data/coderev.db
+```
+
+改动文件后**无需重启**：服务按文件 mtime 自动重载。
+
+### 9.2 环境变量
+
 | 变量 | 必填 | 说明 |
 |---|---|---|
-| `CODEREV_WEBHOOK_SECRET` | 是 | 与 GitHub webhook 里配的一致 |
+| `CODEREV_WEBHOOK_SECRET` | 是 | 与 GitHub webhook 里配的一致；只在进程内使用 |
 | `GITHUB_TOKEN` | 是 | 回写评论用，需要 `pull-requests: write` |
-| `CODEREV_REPOS` | 是 | 白名单，逗号分隔 |
-| `CODEREV_DB` | 否 | 默认 `data/coderev.db` |
-| `CODEREV_WORKERS` | 否 | 工作线程数，默认 2 |
+| `CODEREV_SERVER_CONFIG` | 否 | 默认 `config/server.yml` |
 | `CODEREV_API_KEY` 等 | 是 | 沿用现有模型配置 |
+
+> 密钥一律只从环境变量读，不进 YAML——避免被误提交。
 
 ---
 
@@ -175,9 +199,35 @@ sequenceDiagram
 
 ---
 
-## 13. 未决问题
+## 13. 已确认的决定（2026-11-11）
 
-1. **GitHub App（v0.4）**：需要私钥管理与 installation token 刷新，比 PAT 复杂但更安全（权限可收敛到单仓）。v0.3 先用 PAT。
-2. **多实例**：SQLite 锁只在单进程有效。真要水平扩展，得换 Postgres 行锁或 Redis——留到有需求再说。
-3. **大 PR**：超过 1500 行变更时是否只审高风险文件（PRD 里有这条），服务端要不要单独限流？
-4. **仓库白名单变更**：改环境变量要重启容器。是否支持从 `.coderev.yml` 读（需要能访问仓库文件，多一次 API 调用）？
+| 问题 | 结论 |
+|---|---|
+| 认证方式 | **PAT**（`GITHUB_TOKEN`）；GitHub App 放 v0.4 |
+| 持久化 | **SQLite**，后续按实际情况再评估 |
+| 大 PR | **服务端限流**：超过 `max_changed_lines` 只审高风险文件，并在评论里说明 |
+| 白名单来源 | **服务器侧 `config/server.yml`**（不是仓库内 `.coderev.yml`），文件变更自动重载 |
+
+**仍然存在的风险**
+
+1. **PAT 权限过大**：只能靠白名单和"不主动扫描"约束；泄露影响你所有仓库，必须定期轮换。
+2. **单实例**：SQLite 锁只在单进程有效，扩容前必须先换存储。
+3. **白名单变更口径**：mtime 重载对容器挂载有效；如果配置写进镜像，改配置仍需重建——文档里要写清楚推荐用 volume 挂载。
+
+---
+
+## 14. 实现进度
+
+| PR | 范围 | 状态 |
+|---|---|---|
+| 1 | 验签、事件解析、白名单、SQLite 去重、`POST /webhook` 返回 202 | ✅ 2026-11-11 |
+| 2 | 抽 `service.review_pr`、异步 worker、PR 级串行 | ⬜ |
+| 3 | compose 接入、部署文档、cloudflared 联调 | ⬜ |
+
+PR1 已落地的东西：
+
+- `webhook.py`：`verify_signature`（常量时间比较）、`parse_event`（事件/action/draft/必填字段）、`is_allowed`
+- `store.py`：`deliveries` 表 + `INSERT OR IGNORE` 去重，重启不丢
+- `serverconfig.py`：`config/server.yml`，按 mtime 热重载
+- `server.py`：POST 路由、1 MiB 上限、503/401/204/200/202 五种返回
+- 测试：22 个新用例（验签 6、解析 6、存储 3、接口 7）

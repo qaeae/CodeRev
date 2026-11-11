@@ -195,9 +195,27 @@ def cmd_pr(args: argparse.Namespace) -> int:
 
 
 def cmd_serve(args: argparse.Namespace) -> int:
-    from .server import serve
+    from .server import create_server
+    from .serverconfig import SettingsProvider
+    from .store import DeliveryStore
 
-    serve(args.host, args.port)
+    provider = SettingsProvider(args.server_config)
+    settings = provider.get()
+    store = DeliveryStore(settings.db_path)
+
+    server = create_server(args.host, args.port, settings_provider=provider, store=store)
+    print(
+        f"coderev {__version__} listening on http://{args.host}:{args.port} "
+        f"(allowlist={len(settings.repos)} repos, db={settings.db_path})",
+        flush=True,
+    )
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:  # pragma: no cover
+        pass
+    finally:
+        server.server_close()
+        store.close()
     return 0
 
 
@@ -256,9 +274,14 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--path", required=True)
     validate.set_defaults(func=cmd_rules)
 
-    serve_parser = sub.add_parser("serve", help="启动常驻服务（健康检查）")
+    serve_parser = sub.add_parser("serve", help="启动常驻服务（健康检查 + webhook）")
     serve_parser.add_argument("--host", default="0.0.0.0")
     serve_parser.add_argument("--port", type=int, default=8080)
+    serve_parser.add_argument(
+        "--server-config",
+        default="",
+        help="服务器配置（白名单/限流），默认读 CODEREV_SERVER_CONFIG 或 config/server.yml",
+    )
     serve_parser.set_defaults(func=cmd_serve)
 
     return parser
