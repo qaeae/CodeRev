@@ -63,8 +63,14 @@ jobs:
           SHA: ${{ steps.v.outputs.sha }}
         run: |
           set -euo pipefail
-          docker push "$IMAGE:${VERSION}"
-          docker push "$IMAGE:sha-${SHA}"
+          push() {
+            if ! docker push "$1"; then
+              echo "::error title=推送 GHCR 失败::最常见原因是仓库的 Actions 权限是只读。到 Settings → Actions → General → Workflow permissions 选择 “Read and write permissions” 后重试。若仍失败，检查包名是否已被其他账号占用。"
+              exit 1
+            fi
+          }
+          push "$IMAGE:${VERSION}"
+          push "$IMAGE:sha-${SHA}"
 
       - name: Push latest (stable tags only)
         env:

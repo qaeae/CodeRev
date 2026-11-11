@@ -53,7 +53,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release create "${{ steps.tag.outputs.name }}" \
-            --title "CodeRev ${{ steps.tag.outputs.name }}" \
-            --notes-file notes.md \
-            --verify-tag
+          TAG="${{ steps.tag.outputs.name }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release 已存在，更新 notes"
+            gh release edit "$TAG" --title "CodeRev $TAG" --notes-file notes.md
+          else
+            gh release create "$TAG" --title "CodeRev $TAG" --notes-file notes.md --verify-tag
+          fi

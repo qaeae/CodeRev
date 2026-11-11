@@ -87,6 +87,16 @@ docker run --rm -p 8080:8080 ghcr.io/qaeae/coderev:0.3.0
 > 首次发布后包默认可能是 **private**：到仓库的 `Packages` 页面把可见性改成 `public`，否则别人拉不到。
 > `v0.2.0` 早于该 workflow，没有对应镜像。
 
+### 维护者：首次发布镜像的前置设置
+
+打 tag 之后如果 `Publish image` 在 `docker push` 步骤失败（`denied: permission_denied`），几乎都是仓库的 Actions 权限是只读：
+
+1. `Settings → Actions → General → Workflow permissions`
+2. 选 **Read and write permissions**，保存
+3. 重新触发：删掉 tag 再推一次，或在 Actions 页面 Re-run
+
+其他可能：包名已被同 owner 下其他仓库占用（GHCR 的包名在 owner 内唯一）。
+
 ---
 
 ## 常用操作
