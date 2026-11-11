@@ -182,3 +182,42 @@ def test_webhook_ignores_other_events(webhook_server):
     body = _payload()
     status, _ = _post(webhook_server, body, _headers(body, event="issues", delivery="d-9"))
     assert status == 204
+
+
+class FakeWorker:
+    def __init__(self) -> None:
+        self.jobs = []
+
+    def submit(self, job) -> None:
+        self.jobs.append(job)
+
+
+def test_webhook_enqueues_review_job(tmp_path, monkeypatch):
+    monkeypatch.setenv("CODEREV_WEBHOOK_SECRET", SECRET)
+    config = tmp_path / "server.yml"
+    config.write_text("repos:\n  - acme/project\n", encoding="utf-8")
+
+    worker = FakeWorker()
+    store = DeliveryStore(":memory:")
+    srv = create_server(
+        "127.0.0.1",
+        0,
+        settings_provider=SettingsProvider(config),
+        store=store,
+        worker=worker,
+    )
+    thread = threading.Thread(target=srv.serve_forever, daemon=True)
+    thread.start()
+    try:
+        body = _payload()
+        status, _ = _post(srv, body, _headers(body, delivery="d-queue"))
+    finally:
+        srv.shutdown()
+        srv.server_close()
+        thread.join(timeout=5)
+        store.close()
+
+    assert status == 202
+    assert len(worker.jobs) == 1
+    assert worker.jobs[0].number == 7
+    assert worker.jobs[0].repo == "acme/project"

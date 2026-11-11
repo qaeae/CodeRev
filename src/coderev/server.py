@@ -23,6 +23,7 @@ from .webhook import (
     parse_event,
     verify_signature,
 )
+from .worker import Job, ReviewWorker
 
 MAX_BODY_BYTES = 1024 * 1024  # 1 MiB
 Routes = dict[str, Callable[[], dict]]
@@ -32,6 +33,7 @@ def _make_handler(
     routes: Routes,
     settings_provider: SettingsProvider,
     store: DeliveryStore,
+    worker: ReviewWorker | None = None,
 ) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         server_version = f"coderev/{__version__}"
@@ -105,6 +107,15 @@ def _make_handler(
                 return
 
             store.record(event)
+            if worker is not None:
+                worker.submit(
+                    Job(
+                        repo=event.repo,
+                        number=event.number,
+                        head_sha=event.head_sha,
+                        delivery=event.delivery,
+                    )
+                )
             self._send(
                 202,
                 {
@@ -142,6 +153,7 @@ def create_server(
     *,
     settings_provider: SettingsProvider | None = None,
     store: DeliveryStore | None = None,
+    worker: ReviewWorker | None = None,
 ) -> ThreadingHTTPServer:
     provider = settings_provider or SettingsProvider()
     delivery_store = store or DeliveryStore(":memory:")
@@ -153,4 +165,6 @@ def create_server(
             "deliveries": delivery_store.count(),
         },
     }
-    return ThreadingHTTPServer((host, port), _make_handler(routes, provider, delivery_store))
+    return ThreadingHTTPServer(
+        (host, port), _make_handler(routes, provider, delivery_store, worker)
+    )

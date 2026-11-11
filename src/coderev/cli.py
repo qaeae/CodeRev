@@ -10,20 +10,17 @@ import argparse
 import json
 import os
 import sys
-import uuid
 from pathlib import Path
 
-from . import __version__
+from . import __version__, service
 from .config import Config, load_config
 from .diff import parse_unified_diff
 from .github import GitHubClient, GitHubError
-from .models import ReviewResult
-from .prompt import SYSTEM_PROMPT, build_user_prompt
 from .providers import MockProvider, OpenAICompatProvider, Provider, ProviderError
-from .publish import publish
 from .render import render_markdown
-from .rules import load_rules, match_rules, validate_rules
-from .validate import apply_guardrails
+from .rules import load_rules, validate_rules
+from .service import ModelOutputError, ReviewOutcome
+from .worker import Job, ReviewWorker
 
 
 def _ensure_utf8() -> None:
@@ -71,70 +68,54 @@ def _resolve_provider(args: argparse.Namespace, config: Config) -> Provider:
     return OpenAICompatProvider(api_key=api_key, model=model, base_url=base_url)
 
 
-def _run_review(
-    args: argparse.Namespace,
-    diff_text: str,
-    config: Config,
-) -> tuple[ReviewResult, list, bool, list[str]] | int:
-    files = parse_unified_diff(diff_text)
-    if not files:
-        print("没有解析到新增行，跳过审查。", file=sys.stderr)
-        return 0
-
-    rules_path = args.rules or config.review.rules
-    rules = []
-    if rules_path:
-        rules = match_rules(load_rules(Path(rules_path)), list(files))
-
+def _review_diff(args: argparse.Namespace, diff_text: str, config: Config) -> ReviewOutcome | int:
     provider = _resolve_provider(args, config)
-    prompt = build_user_prompt(diff_text, files, rules)
-
     try:
-        raw = provider.complete(SYSTEM_PROMPT, prompt)
+        return service.review_diff(
+            diff_text,
+            provider=provider,
+            rules_path=args.rules or config.review.rules,
+            min_confidence=args.min_confidence
+            if args.min_confidence is not None
+            else config.review.min_confidence,
+            max_findings=args.max_findings
+            if args.max_findings is not None
+            else config.review.max_findings,
+        )
     except ProviderError as exc:
         print(f"模型调用失败：{exc}", file=sys.stderr)
         return 3
-
-    try:
-        payload = _parse_model_json(raw)
-    except json.JSONDecodeError as exc:
-        print(f"模型输出不是合法 JSON：{exc}", file=sys.stderr)
-        print(raw[:500], file=sys.stderr)
+    except ModelOutputError as exc:
+        print(str(exc), file=sys.stderr)
         return 2
-
-    result = ReviewResult.from_dict(payload)
-    filtered, dropped, truncated = apply_guardrails(
-        result,
-        files,
-        min_confidence=args.min_confidence
-        if args.min_confidence is not None
-        else config.review.min_confidence,
-        max_findings=args.max_findings
-        if args.max_findings is not None
-        else config.review.max_findings,
-    )
-    return filtered, dropped, truncated, sorted(files)
 
 
 def cmd_review(args: argparse.Namespace) -> int:
     config = load_config(args.config)
-    outcome = _run_review(args, _read_diff(args.diff), config)
+    diff_text = _read_diff(args.diff)
+    outcome = _review_diff(args, diff_text, config)
     if isinstance(outcome, int):
         return outcome
 
-    result, dropped, truncated, reviewed = outcome
-    run_id = uuid.uuid4().hex[:12]
+    if outcome.changed_lines == 0:
+        print("没有解析到新增行，跳过审查。", file=sys.stderr)
+        return 0
 
     if args.markdown:
-        output = render_markdown(result, run_id=run_id, dropped=len(dropped), truncated=truncated)
+        output = render_markdown(
+            outcome.result,
+            run_id=outcome.run_id,
+            dropped=len(outcome.dropped),
+            truncated=outcome.truncated,
+        )
     else:
         output = json.dumps(
             {
-                "run_id": run_id,
-                "reviewed_files": reviewed,
-                "result": result.to_dict(),
-                "dropped": dropped,
-                "truncated": truncated,
+                "run_id": outcome.run_id,
+                "reviewed_files": sorted(parse_unified_diff(diff_text)),
+                "result": outcome.result.to_dict(),
+                "dropped": outcome.dropped,
+                "truncated": outcome.truncated,
             },
             ensure_ascii=False,
             indent=2,
@@ -152,41 +133,54 @@ def cmd_review(args: argparse.Namespace) -> int:
 def cmd_pr(args: argparse.Namespace) -> int:
     token = args.token or os.environ.get("GITHUB_TOKEN", "")
     config = load_config(args.config)
+    should_post = bool(args.post or config.review.post)
 
+    # 先建客户端：token 缺失比 provider 配置错误更值得优先报出来
     try:
         client = GitHubClient(repo=args.repo, token=token)
-        diff_text = client.get_diff(args.pr)
-    except (ValueError, GitHubError) as exc:
+    except ValueError as exc:
         print(f"拉取 PR 失败：{exc}", file=sys.stderr)
         return 4
 
-    outcome = _run_review(args, diff_text, config)
-    if isinstance(outcome, int):
-        return outcome
+    try:
+        provider = _resolve_provider(args, config)
+        outcome = service.review_pull_request(
+            client,
+            args.pr,
+            provider=provider,
+            review=config.review,
+            post=should_post,
+        )
+    except GitHubError as exc:
+        print(f"拉取 PR 失败：{exc}", file=sys.stderr)
+        return 4
+    except ProviderError as exc:
+        print(f"模型调用失败：{exc}", file=sys.stderr)
+        return 3
+    except ModelOutputError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
 
-    result, dropped, truncated, _ = outcome
-    run_id = uuid.uuid4().hex[:12]
-
-    if not (args.post or config.review.post):
-        print(render_markdown(result, run_id=run_id, dropped=len(dropped), truncated=truncated))
+    if not should_post:
+        print(
+            render_markdown(
+                outcome.result,
+                run_id=outcome.run_id,
+                dropped=len(outcome.dropped),
+                truncated=outcome.truncated,
+            )
+        )
         return 0
 
-    published = publish(
-        client,
-        args.pr,
-        result,
-        dropped=len(dropped),
-        truncated=truncated,
-        run_id=run_id,
-    )
+    published = outcome.published
     print(
         json.dumps(
             {
-                "run_id": run_id,
-                "summary": published.summary_action,
-                "inline_created": published.inline_created,
-                "inline_deleted": published.inline_deleted,
-                "dropped": len(dropped),
+                "run_id": outcome.run_id,
+                "summary": published.summary_action if published else "skipped",
+                "inline_created": published.inline_created if published else 0,
+                "inline_deleted": published.inline_deleted if published else 0,
+                "dropped": len(outcome.dropped),
             },
             ensure_ascii=False,
         )
@@ -199,11 +193,45 @@ def cmd_serve(args: argparse.Namespace) -> int:
     from .serverconfig import SettingsProvider
     from .store import DeliveryStore
 
-    provider = SettingsProvider(args.server_config)
-    settings = provider.get()
+    settings_provider = SettingsProvider(args.server_config)
+    settings = settings_provider.get()
     store = DeliveryStore(settings.db_path)
 
-    server = create_server(args.host, args.port, settings_provider=provider, store=store)
+    def handle_job(job: Job) -> None:
+        client = GitHubClient(repo=job.repo, token=os.environ.get("GITHUB_TOKEN", ""))
+        config = load_config(None)
+        provider = _resolve_provider(
+            argparse.Namespace(provider=None, mock_response=None, api_key="", model="", base_url=""),
+            config,
+        )
+        outcome = service.review_pull_request(
+            client,
+            job.number,
+            provider=provider,
+            review=config.review,
+            post=config.review.post,
+        )
+        print(
+            f"reviewed {job.repo}#{job.number}: "
+            f"{len(outcome.result.findings)} findings, {len(outcome.result.test_gaps)} gaps",
+            flush=True,
+        )
+
+    if config.review.provider == "mock":
+        print(
+            "警告：当前 provider=mock，webhook 任务会因缺少 mock-response 而失败；"
+            "请在 .coderev.yml 或 CODEREV_PROVIDER 里配置真实模型。",
+            flush=True,
+        )
+
+    worker = ReviewWorker(handle_job, workers=settings.workers)
+    server = create_server(
+        args.host,
+        args.port,
+        settings_provider=settings_provider,
+        store=store,
+        worker=worker,
+    )
     print(
         f"coderev {__version__} listening on http://{args.host}:{args.port} "
         f"(allowlist={len(settings.repos)} repos, db={settings.db_path})",
@@ -215,6 +243,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
         pass
     finally:
         server.server_close()
+        worker.shutdown(wait=False)
         store.close()
     return 0
 

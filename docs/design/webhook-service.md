@@ -221,7 +221,7 @@ server:
 | PR | 范围 | 状态 |
 |---|---|---|
 | 1 | 验签、事件解析、白名单、SQLite 去重、`POST /webhook` 返回 202 | ✅ 2026-11-11 |
-| 2 | 抽 `service.review_pr`、异步 worker、PR 级串行 | ⬜ |
+| 2 | 抽 `service.review_pr`、异步 worker、PR 级串行、失败重试 | ✅ 2026-11-11 |
 | 3 | compose 接入、部署文档、cloudflared 联调 | ⬜ |
 
 PR1 已落地的东西：
@@ -231,3 +231,12 @@ PR1 已落地的东西：
 - `serverconfig.py`：`config/server.yml`，按 mtime 热重载
 - `server.py`：POST 路由、1 MiB 上限、503/401/204/200/202 五种返回
 - 测试：22 个新用例（验签 6、解析 6、存储 3、接口 7）
+
+PR2 已落地的东西：
+
+- `service.py`：`review_diff` / `review_pull_request`，**CLI 与 worker 共用一份实现**
+- `worker.py`：有界线程池、同一 PR 串行、失败重试一次（可配退避）
+- `server.py`：收到合法事件后投递 `Job`，立即返回 202
+- 大 PR：变更行数超过 `max_changed_lines` 时在摘要里标注"diff 可能被截断"
+  （**注意**：当前是截断 + 标注，不是按风险挑选文件——后者留到后续）
+- 测试：12 个新用例（service 7、worker 4、投递 1），总计 83 个
