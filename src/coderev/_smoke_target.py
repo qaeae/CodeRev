@@ -8,3 +8,5 @@ def load_config():
         return {"key": API_KEY}
     except:
         pass
+
+# 第二次运行：验证幂等（摘要应原地更新，inline 先删后建）
