@@ -6,7 +6,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Status](https://img.shields.io/badge/release-v0.2.0-blue.svg)](CHANGELOG.md)
 
-> **v0.2.0 已发布**：GitHub Action 可用，真实 PR 上验证过（24 秒出结果、评论幂等）。
+> **v0.3.0 待发版**：GitHub Action 与自托管 webhook 服务都已完成；webhook 在本机 Docker 上验证过 202/200/401/204 四种分支。
 > Before you start: everything here is documented in Chinese. English issues and PRs are welcome.
 
 ---
