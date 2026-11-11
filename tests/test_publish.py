@@ -101,3 +101,17 @@ def test_finding_body_carries_marker_and_rule():
     assert FINDING_MARKER in body
     assert "rule" in body
     assert "80%" in body
+
+
+def test_suggestion_fence_has_no_blank_line():
+    finding = Finding(
+        path="src/a.py",
+        line_start=3,
+        title="硬编码密钥",
+        rule_id="python/hardcoded-secret",
+        severity="blocker",
+        suggestion='API_KEY = os.environ["API_KEY"]',
+        confidence=0.9,
+    )
+    body = finding_body(finding)
+    assert '```\nAPI_KEY = os.environ["API_KEY"]\n```' in body

@@ -31,7 +31,8 @@ def finding_body(finding: Finding) -> str:
     if finding.detail:
         parts.append(finding.detail)
     if finding.suggestion:
-        parts.extend(["**建议**", "```", finding.suggestion, "```"])
+        parts.append("**建议**")
+        parts.append(f"```\n{finding.suggestion}\n```")
     parts.append(f"<sub>规则 `{finding.rule_id}` · 置信度 {finding.confidence:.0%}</sub>")
     parts.append(FINDING_MARKER)
     return "\n\n".join(parts)
