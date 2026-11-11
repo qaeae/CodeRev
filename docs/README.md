@@ -23,8 +23,9 @@
 | 5 | [多项目汇总](b/05-portfolio-summary.md) | 19 列、加权口径 | `feat/b-change-trace` |
 | 6 | [两周启动方案](b/06-kickoff-plan.md) | 执行表、验收线、止损规则 | `feat/b-change-trace` |
 | 7 | [变更影响引擎](design/change-impact-engine.md) | 变更驱动的图谱、传播、契约快照（V2） | `main` |
-| 8 | [开源化改造](design/open-source-pivot.md) | **项目转开源免费后的设计变更清单** | `main` |
-| 9 | [PR 审查 PRD](a/prd-pr-review.md) | 12 章 + 3 附录 | `feat/a-pr-review` |
+| 8 | [Webhook 服务设计](design/webhook-service.md) | 常驻服务：验签、去重、异步、幂等发布 | `main` |
+| 9 | [开源化改造](design/open-source-pivot.md) | **项目转开源免费后的设计变更清单** | `main` |
+| 10 | [PR 审查 PRD](a/prd-pr-review.md) | 12 章 + 3 附录 | `feat/a-pr-review` |
 
 > 全部文档已合并到 `main`，路径不再依赖分支。
 
