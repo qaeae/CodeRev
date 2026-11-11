@@ -6,7 +6,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Status](https://img.shields.io/badge/status-v0.2%20alpha-orange.svg)](ROADMAP.md)
 
-> **v0.2 开发中**：核心流水线（diff 解析 → 规则匹配 → 模型调用 → 守卫校验 → 评论渲染）已可**离线跑通**，GitHub API 集成与 Action 尚未接入。
+> **v0.2 可用**：核心流水线 + GitHub Action 已打通，可在真实 PR 上出评论（端到端验证待做）。
 > Before you start: everything here is documented in Chinese. English issues and PRs are welcome.
 
 ---
@@ -35,6 +35,36 @@ export CODEREV_API_KEY=sk-...
 coderev review --diff pr.diff --provider openai --model deepseek-chat \
   --base-url https://api.deepseek.com/v1 --rules rules/examples
 ```
+
+---
+
+## 接入 GitHub
+
+```yaml
+# .github/workflows/coderev.yml
+on: [pull_request]
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: qaeae/CodeRev@main
+        with:
+          api-key: ${{ secrets.CODEREV_API_KEY }}
+          model: deepseek-chat
+          base-url: https://api.deepseek.com/v1
+```
+
+行为：
+
+- 每次 PR 生成**一条摘要评论**（同一个 PR 重复跑会原地更新，不堆积）；
+- 每条问题挂一条 **inline 评论**，带文件、行号、规则、置信度；
+- 无法定位或置信度不足的意见**直接丢弃**，不会出现在 PR 里。
+
+详见 [部署文档](docs/deploy/action.md)。配置写 `.coderev.yml`（见 [示例](.coderev.example.yml)），优先级：命令行 > 配置文件 > 默认值。
 
 ---
 

@@ -26,15 +26,15 @@
 - [x] 守卫：路径 / 行号 / 置信度 / 去重 / 截断（`validate.py`）
 - [x] Markdown 评论渲染（`render.py`）
 - [x] 模型适配：Mock + OpenAI 兼容（`providers/`）
-- [x] 17 个单测，离线可跑
-- [x] Dockerfile
+- [x] GitHub API：拉 PR diff、摘要评论、inline 评论、幂等更新（`github.py` / `publish.py`）
+- [x] `action.yml`（composite action）
+- [x] `.coderev.yml` 配置加载（`config.py`）
+- [x] 32 个单测，离线可跑
+- [x] Dockerfile + 部署文档（`docs/deploy/action.md`）
 
 待完成：
 
-- [ ] GitHub API：拉 PR diff、回写 inline 评论、更新已有评论（幂等）
-- [ ] `action.yml`（composite 或 docker action）
-- [ ] `.coderev.yml` 配置加载（替代一堆命令行参数）
-- [ ] 端到端测试仓库（真实 PR 上跑通）
+- [ ] 端到端测试仓库（真实 PR 上跑通，验证权限与幂等）
 
 **验收**：在一个真实仓库里，加 3 行 YAML 就能跑出第一条评论。
 
