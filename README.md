@@ -51,12 +51,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: qaeae/CodeRev@main
+      - uses: qaeae/CodeRev@v0.2.0
         with:
           api-key: ${{ secrets.CODEREV_API_KEY }}
           model: deepseek-chat
           base-url: https://api.deepseek.com/v1
 ```
+
+> 建议锁版本（`@v0.2.0`）而不是 `@main`，避免上游改动直接影响你的 CI。升级时改这一行即可。
 
 行为：
 

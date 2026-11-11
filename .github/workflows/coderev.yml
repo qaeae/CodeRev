@@ -24,6 +24,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: CodeRev
+        # 这里刻意用 @main：仓库要用最新主线自审，才能第一时间发现回归。
+        # 使用者请锁版本（@v0.2.0），见 README。
         uses: qaeae/CodeRev@main
         with:
           api-key: ${{ secrets.CODEREV_API_KEY }}

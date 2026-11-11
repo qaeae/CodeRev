@@ -39,13 +39,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: qaeae/CodeRev@main
+      - uses: qaeae/CodeRev@v0.2.0
         with:
           api-key: ${{ secrets.CODEREV_API_KEY }}
           model: deepseek-chat
           base-url: https://api.deepseek.com/v1
           rules: rules/examples
 ```
+
+> **锁版本**：`@v0.2.0` 是发布标签，稳定；`@main` 跟随主线，可能有未发布改动。生产仓库建议锁标签。
 
 提交后开一个 PR，Actions 里能看到运行过程，PR 里会出现一条摘要评论 + 若干 inline 评论。
 

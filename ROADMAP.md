@@ -45,6 +45,8 @@
 
 ## v0.3 自托管服务
 
+> 任务拆解（可直接提 issue）：[docs/roadmap/v0.3-tasks.md](docs/roadmap/v0.3-tasks.md)
+
 - [ ] `docker compose up` 一键起（Postgres + Redis + app）
 - [ ] GitHub App 模式（自建 App，webhook 验签）
 - [ ] 配置即代码：`.coderev.yml`
