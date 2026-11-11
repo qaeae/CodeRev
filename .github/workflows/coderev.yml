@@ -1,0 +1,32 @@
+name: CodeRev Self Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - ".github/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: coderev-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: CodeRev
+        uses: qaeae/CodeRev@main
+        with:
+          api-key: ${{ secrets.CODEREV_API_KEY }}
+          model: deepseek-chat
+          base-url: https://api.deepseek.com/v1
+          rules: rules/examples
