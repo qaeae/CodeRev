@@ -4,9 +4,9 @@
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Status](https://img.shields.io/badge/status-v0.2%20alpha-orange.svg)](ROADMAP.md)
+[![Status](https://img.shields.io/badge/release-v0.2.0-blue.svg)](CHANGELOG.md)
 
-> **v0.2 可用**：核心流水线 + GitHub Action 已打通，可在真实 PR 上出评论（端到端验证待做）。
+> **v0.2.0 已发布**：GitHub Action 可用，真实 PR 上验证过（24 秒出结果、评论幂等）。
 > Before you start: everything here is documented in Chinese. English issues and PRs are welcome.
 
 ---
