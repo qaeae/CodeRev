@@ -37,9 +37,12 @@ jobs:
           echo "building $TAG (version=$VERSION, sha=$SHA)"
 
       - name: Login to GHCR
+        env:
+          # 优先用 CR_PAT（若仓库开启了只读的 workflow 权限，GITHUB_TOKEN 无法推包）
+          GHCR_TOKEN: ${{ secrets.CR_PAT || github.token }}
         run: |
           set -euo pipefail
-          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
       - name: Build
         env:
