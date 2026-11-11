@@ -19,6 +19,10 @@ curl localhost:8080/healthz
 {"status": "ok", "version": "0.2.0"}
 ```
 
+> **已实测**（2026-11-11，Docker Desktop 29.5.3 / Linux 引擎）：
+> `docker compose up -d --build` 构建成功 → `Up 25 seconds (healthy)` → `/healthz` 返回上述 JSON →
+> `docker compose run --rm app --version` 输出 `coderev 0.2.0`。
+
 ---
 
 ## 现在能做什么
@@ -97,6 +101,8 @@ docker compose up -d --build
 
 | 现象 | 原因 | 处理 |
 |---|---|---|
+| `failed to connect to the docker API` | Docker Desktop 没启动 | 启动 Docker Desktop，等引擎就绪（`docker version` 能返回 Server 版本） |
+| 构建时 `failed to fetch anonymous token` | 连不上 Docker Hub | 先重试一次（常见瞬时失败），仍失败就配镜像加速器 |
 | `healthcheck` 一直 starting | 端口被占用 | 改 `ports` 或停掉占用进程 |
 | `curl` 连接被拒 | 容器没起来 | `docker compose logs app` |
 | 构建失败在 `pip install` | 网络问题 | 配镜像源或重试 |
