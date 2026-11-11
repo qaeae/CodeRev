@@ -16,6 +16,8 @@ COPY rules ./rules
 
 # 默认以非 root 运行
 RUN useradd --create-home --uid 10001 coderev
+# 预建数据目录并授权：命名卷首次挂载会继承这里的属主
+RUN mkdir -p /app/data && chown -R coderev:coderev /app/data
 USER coderev
 
 ENTRYPOINT ["coderev"]

@@ -118,3 +118,31 @@ def test_cli_flag_beats_env(capsys, monkeypatch):
     )
     assert code == 0
     assert "OrderService.java" in capsys.readouterr().out
+
+
+def test_serve_starts_without_crashing(tmp_path, monkeypatch, capsys):
+    """回归：cmd_serve 曾在启动时引用未定义变量，容器直接 CrashLoop。"""
+    import coderev.cli as cli
+
+    config = tmp_path / "server.yml"
+    config.write_text(
+        f"repos:\n  - acme/project\nserver:\n  db: {tmp_path / 'd.db'}\n", encoding="utf-8"
+    )
+
+    class FakeServer:
+        def serve_forever(self):
+            raise KeyboardInterrupt
+
+        def server_close(self):
+            pass
+
+    monkeypatch.setattr("coderev.server.create_server", lambda *a, **k: FakeServer())
+    monkeypatch.setenv("CODEREV_PROVIDER", "openai")
+    monkeypatch.setenv("CODEREV_MODEL", "deepseek-chat")
+
+    code = cli.cmd_serve(
+        type("Args", (), {"host": "127.0.0.1", "port": 0, "server_config": str(config)})()
+    )
+
+    assert code == 0
+    assert "listening on" in capsys.readouterr().out

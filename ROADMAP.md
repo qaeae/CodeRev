@@ -48,9 +48,10 @@
 > 任务拆解（可直接提 issue）：[docs/roadmap/v0.3-tasks.md](docs/roadmap/v0.3-tasks.md)
 
 - [x] `docker compose up` 一键起（app + 健康检查；Postgres/Redis 留占位）
-- [ ] GitHub App 模式（自建 App，webhook 验签）
+- [x] Webhook 常驻服务（PAT + 验签 + 去重 + 异步 worker）
 - [x] 配置即代码：`.coderev.yml`
-- [x] 部署文档：Docker / 反代 / 备份
+- [x] 部署文档：Docker / 反代 / Webhook
+- [ ] GitHub App 安装流程（v0.4）
 
 **验收**：不看源码，只按文档，30 分钟能跑起来。
 

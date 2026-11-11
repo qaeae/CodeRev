@@ -78,8 +78,8 @@ curl localhost:8080/healthz     # {"status":"ok","version":"0.2.0"}
 
 也可以直接用官方镜像（自 v0.3.0 起）：`docker run --rm -p 8080:8080 ghcr.io/qaeae/coderev:0.3.0`
 
-当前镜像提供健康检查（`/healthz`、`/readyz`）；接收 GitHub webhook 的常驻服务在 v0.3 后续。
-详见 [docs/deploy/docker.md](docs/deploy/docker.md)。
+当前镜像提供健康检查（`/healthz`、`/readyz`）与 GitHub webhook 常驻服务（验签、去重、异步审查）。
+部署细节见 [docs/deploy/docker.md](docs/deploy/docker.md)；接 GitHub 的完整步骤见 [docs/deploy/webhook.md](docs/deploy/webhook.md)。
 
 ---
 

@@ -196,10 +196,10 @@ def cmd_serve(args: argparse.Namespace) -> int:
     settings_provider = SettingsProvider(args.server_config)
     settings = settings_provider.get()
     store = DeliveryStore(settings.db_path)
+    config = load_config(None)
 
     def handle_job(job: Job) -> None:
         client = GitHubClient(repo=job.repo, token=os.environ.get("GITHUB_TOKEN", ""))
-        config = load_config(None)
         provider = _resolve_provider(
             argparse.Namespace(provider=None, mock_response=None, api_key="", model="", base_url=""),
             config,

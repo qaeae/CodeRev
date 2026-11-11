@@ -31,10 +31,10 @@ curl localhost:8080/healthz
 |---|---|
 | 健康检查 `/healthz` `/readyz` | ✅ v0.3 |
 | 命令行审查 | ✅ `docker run --rm coderev:local review ...` |
-| Webhook 常驻服务 | ❌ 见任务 #3 |
+| **Webhook 常驻服务** | ✅ v0.3，配置见 [webhook.md](webhook.md) |
 
 > 镜像默认启动 `coderev serve`（`docker run -p 8080:8080 coderev:local` 即可），EXPOSE 8080。
-> 当前只提供健康检查；真正接收 GitHub webhook 的常驻服务在 #3 里做。在那之前，用 GitHub Action 方式接入（见 [action.md](action.md)）。
+> 要接 GitHub 自动审查，按 [webhook.md](webhook.md) 配公网地址、白名单与 Secret；只想快速试跑用 [GitHub Action](action.md)。
 
 ### 在容器里跑一次审查
 

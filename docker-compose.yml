@@ -8,10 +8,19 @@ services:
     ports:
       - "8080:8080"
     environment:
+      # 模型（任何 OpenAI 兼容接口）
       CODEREV_PROVIDER: ${CODEREV_PROVIDER:-openai}
       CODEREV_MODEL: ${CODEREV_MODEL:-}
       CODEREV_BASE_URL: ${CODEREV_BASE_URL:-}
       CODEREV_API_KEY: ${CODEREV_API_KEY:-}
+      # webhook 与回写评论
+      CODEREV_WEBHOOK_SECRET: ${CODEREV_WEBHOOK_SECRET:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    volumes:
+      # 白名单等服务器配置，只读挂载；改完自动生效（按 mtime 重载）
+      - ./config:/app/config:ro
+      # SQLite 持久化
+      - coderev-data:/app/data
     healthcheck:
       test:
         - CMD
@@ -26,19 +35,17 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  # v0.3 后续：webhook 常驻服务需要队列与状态存储时再启用
-  # db:
-  #   image: postgres:16-alpine
-  #   environment:
-  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-coderev}
-  #   volumes:
-  #     - pgdata:/var/lib/postgresql/data
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U postgres"]
-  #
-  # redis:
-  #   image: redis:7-alpine
-  #   command: ["redis-server", "--appendonly", "yes"]
+volumes:
+  coderev-data:
 
-# volumes:
-#   pgdata:
+# v0.3 后续：webhook 常驻服务需要队列与状态存储时再启用
+# db:
+#   image: postgres:16-alpine
+#   environment:
+#     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-coderev}
+#   volumes:
+#     - pgdata:/var/lib/postgresql/data
+#
+# redis:
+#   image: redis:7-alpine
+#   command: ["redis-server", "--appendonly", "yes"]
