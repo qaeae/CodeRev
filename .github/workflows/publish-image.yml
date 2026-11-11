@@ -1,0 +1,91 @@
+name: Publish image
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 要构建的 tag（如 v0.3.0）
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/coderev
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Resolve versions
+        id: v
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          SHA="$(git rev-parse --short HEAD)"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "building $TAG (version=$VERSION, sha=$SHA)"
+
+      - name: Login to GHCR
+        run: |
+          set -euo pipefail
+          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+          SHA: ${{ steps.v.outputs.sha }}
+        run: |
+          set -euo pipefail
+          docker build \
+            --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" \
+            --label "org.opencontainers.image.version=${VERSION}" \
+            --label "org.opencontainers.image.revision=${SHA}" \
+            --label "org.opencontainers.image.licenses=Apache-2.0" \
+            --label "org.opencontainers.image.title=CodeRev" \
+            -t "$IMAGE:${VERSION}" \
+            -t "$IMAGE:sha-${SHA}" \
+            .
+
+      - name: Push version and sha tags
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+          SHA: ${{ steps.v.outputs.sha }}
+        run: |
+          set -euo pipefail
+          docker push "$IMAGE:${VERSION}"
+          docker push "$IMAGE:sha-${SHA}"
+
+      - name: Push latest (stable tags only)
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ "$VERSION" =~ (rc|beta|alpha|dev) ]]; then
+            echo "预发布版本，不移动 latest"
+            exit 0
+          fi
+          docker tag "$IMAGE:${VERSION}" "$IMAGE:latest"
+          docker push "$IMAGE:latest"
+
+      - name: Summary
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+          SHA: ${{ steps.v.outputs.sha }}
+        run: |
+          {
+            echo "### 镜像已发布"
+            echo ""
+            echo "- \`$IMAGE:${VERSION}\`"
+            echo "- \`$IMAGE:sha-${SHA}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -76,6 +76,8 @@ docker compose up -d --build
 curl localhost:8080/healthz     # {"status":"ok","version":"0.2.0"}
 ```
 
+也可以直接用官方镜像（自 v0.3.0 起）：`docker run --rm -p 8080:8080 ghcr.io/qaeae/coderev:0.3.0`
+
 当前镜像提供健康检查（`/healthz`、`/readyz`）；接收 GitHub webhook 的常驻服务在 v0.3 后续。
 详见 [docs/deploy/docker.md](docs/deploy/docker.md)。
 

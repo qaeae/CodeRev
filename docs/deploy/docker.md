@@ -69,6 +69,26 @@ docker compose run --rm app review \
 
 ---
 
+## 使用官方镜像（GHCR）
+
+自 **v0.3.0** 起，推 tag 会自动构建并发布镜像（`.github/workflows/publish-image.yml`）：
+
+```bash
+docker pull ghcr.io/qaeae/coderev:0.3.0
+docker run --rm -p 8080:8080 ghcr.io/qaeae/coderev:0.3.0
+```
+
+| 标签 | 含义 |
+|---|---|
+| `0.3.0` / `v0.3.0` | 版本号，生产建议锁这个 |
+| `sha-<short>` | 对应提交，便于回溯 |
+| `latest` | 最新稳定版（`rc/beta/alpha/dev` 不会移动它） |
+
+> 首次发布后包默认可能是 **private**：到仓库的 `Packages` 页面把可见性改成 `public`，否则别人拉不到。
+> `v0.2.0` 早于该 workflow，没有对应镜像。
+
+---
+
 ## 常用操作
 
 ```bash
