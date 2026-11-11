@@ -1,0 +1,7 @@
+# 保护 CI 配置：只有仓库所有者能批准 .github/ 下的改动
+# 否则任何人都能通过 PR 修改 workflow 把 secrets 发到外部
+/.github/ @qaeae
+
+# 发布与许可证相关文件
+/LICENSE @qaeae
+/TRADEMARK.md @qaeae
