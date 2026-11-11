@@ -5,13 +5,19 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+EXPOSE 8080
+
 COPY pyproject.toml README.md ./
 COPY src ./src
 RUN pip install --no-cache-dir .
+
+# 自带示例规则包：自托管时开箱可用
+COPY rules ./rules
 
 # 默认以非 root 运行
 RUN useradd --create-home --uid 10001 coderev
 USER coderev
 
 ENTRYPOINT ["coderev"]
-CMD ["--help"]
+# 默认起服务（健康检查在 /healthz）；命令行用法：docker run --rm coderev:local review ...
+CMD ["serve", "--host", "0.0.0.0", "--port", "8080"]

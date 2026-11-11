@@ -1,0 +1,63 @@
+name: Docker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "rules/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "pyproject.toml"
+      - ".github/workflows/docker.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "rules/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "pyproject.toml"
+      - ".github/workflows/docker.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t coderev:ci .
+
+      - name: Review a diff with mock provider
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "$PWD/tests/fixtures:/fixtures:ro" \
+            coderev:ci review \
+              --diff /fixtures/example.diff \
+              --provider mock \
+              --mock-response /fixtures/mock-response.json \
+              --markdown > out.md
+          echo "----- output -----"
+          head -20 out.md
+          grep -q "CodeRev 审查摘要" out.md
+          grep -q "测试缺口" out.md
+
+      - name: Health endpoint inside the image
+        run: |
+          set -euo pipefail
+          docker run -d --name coderev-ci -P coderev:ci
+          PORT=$(docker port coderev-ci 8080/tcp | head -1 | awk -F: '{print $NF}')
+          echo "mapped port: $PORT"
+          for _ in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:${PORT}/healthz" > health.json 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          cat health.json
+          grep -q '"status": "ok"' health.json
+          docker rm -f coderev-ci
