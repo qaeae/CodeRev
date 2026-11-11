@@ -1,0 +1,41 @@
+version: 1
+pack: core/python
+rules:
+  - id: python/hardcoded-secret
+    name: 硬编码密钥
+    severity: blocker
+    language: python
+    applies_to:
+      - "src/**/*.py"
+      - "tests/**/*.py"
+    intent: |
+      密钥、token、密码直接写进源码，会随代码进入版本库与构建产物，
+      无法轮换，且容易在日志与报错中被带出。应从环境变量或配置中心读取。
+    examples:
+      bad: |
+        API_KEY = "sk-live-1234567890"
+        client = Client(api_key=API_KEY)
+      good: |
+        API_KEY = os.environ["API_KEY"]
+        client = Client(api_key=API_KEY)
+
+  - id: python/bare-except
+    name: 裸 except 吞掉异常
+    severity: warning
+    language: python
+    applies_to:
+      - "src/**/*.py"
+    intent: |
+      裸 except 会连同 KeyboardInterrupt、SystemExit 一起捕获，掩盖真实故障；
+      except ...: pass 还会让上游永远看不到错误。应捕获具体异常并至少记录。
+    examples:
+      bad: |
+        try:
+            do_work()
+        except:
+            pass
+      good: |
+        try:
+            do_work()
+        except ValueError as exc:
+            logger.warning("do_work failed: %s", exc)
