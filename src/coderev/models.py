@@ -75,11 +75,58 @@ class Finding:
         }
 
 
+@dataclass(frozen=True)
+class TestGap:
+    """A place that lacks tests — suggestion only, nothing is generated or run."""
+
+    path: str
+    symbol: str
+    reason: str = ""
+    cases: tuple[str, ...] = ()
+    confidence: float = 0.0
+
+    @property
+    def key(self) -> tuple[str, str]:
+        return (self.path, self.symbol)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "TestGap":
+        missing = [key for key in ("path", "symbol") if not data.get(key)]
+        if missing:
+            raise ValueError(f"test_gap 缺少字段: {', '.join(missing)}")
+
+        raw_cases = data.get("cases") or []
+        if isinstance(raw_cases, str):
+            raw_cases = [raw_cases]
+        cases = tuple(str(case).strip() for case in raw_cases if str(case).strip())[:5]
+
+        confidence = float(data.get("confidence") or 0.0)
+        confidence = min(max(confidence, 0.0), 1.0)
+
+        return cls(
+            path=str(data["path"]).lstrip("./"),
+            symbol=str(data["symbol"]).strip()[:80],
+            reason=str(data.get("reason") or "").strip(),
+            cases=cases,
+            confidence=confidence,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "path": self.path,
+            "symbol": self.symbol,
+            "reason": self.reason,
+            "cases": list(self.cases),
+            "confidence": round(self.confidence, 3),
+        }
+
+
 @dataclass
 class ReviewResult:
     summary: str = ""
     risk_level: str = "low"
     findings: list[Finding] = field(default_factory=list)
+    test_gaps: list[TestGap] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ReviewResult":
@@ -100,6 +147,19 @@ class ReviewResult:
                 # 单条解析失败不应让整次审查失败
                 continue
 
+        raw_gaps = data.get("test_gaps") or []
+        if not isinstance(raw_gaps, list):
+            raw_gaps = []
+
+        test_gaps: list[TestGap] = []
+        for item in raw_gaps:
+            if not isinstance(item, dict):
+                continue
+            try:
+                test_gaps.append(TestGap.from_dict(item))
+            except (ValueError, TypeError):
+                continue
+
         risk = str(data.get("risk_level", "low")).lower()
         if risk not in RISK_LEVELS:
             risk = "low"
@@ -108,6 +168,7 @@ class ReviewResult:
             summary=str(data.get("summary") or "").strip(),
             risk_level=risk,
             findings=findings,
+            test_gaps=test_gaps,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -115,6 +176,7 @@ class ReviewResult:
             "summary": self.summary,
             "risk_level": self.risk_level,
             "findings": [f.to_dict() for f in self.sorted_findings()],
+            "test_gaps": [g.to_dict() for g in self.test_gaps],
         }
 
     def sorted_findings(self) -> list[Finding]:

@@ -52,6 +52,21 @@ def render_markdown(
             lines.append(f"\n<sub>规则 `{finding.rule_id}` · 置信度 {finding.confidence:.0%}</sub>")
             lines.append("")
 
+    if result.test_gaps:
+        lines.append(f"### 测试缺口（{len(result.test_gaps)}）")
+        lines.append("")
+        for gap in result.test_gaps:
+            lines.append(f"#### `{gap.path}` · `{gap.symbol}`")
+            if gap.reason:
+                lines.append("")
+                lines.append(gap.reason)
+            if gap.cases:
+                lines.append("")
+                for case in gap.cases:
+                    lines.append(f"- {case}")
+            lines.append(f"\n<sub>置信度 {gap.confidence:.0%} · 仅建议，不会自动生成</sub>")
+            lines.append("")
+
     if dropped:
         lines.append(f"> 另有 {dropped} 条意见因无法定位或置信度不足未展示。")
     if truncated:

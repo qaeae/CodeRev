@@ -68,7 +68,10 @@ def test_cli_review_markdown(capsys):
         ]
     )
     assert code == 0
-    assert "## CodeRev 审查摘要" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "## CodeRev 审查摘要" in out
+    assert "测试缺口" in out
+    assert "pay" in out
 
 
 def test_cli_rules_validate(capsys):

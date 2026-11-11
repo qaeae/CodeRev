@@ -78,3 +78,46 @@ def test_severity_sorted_first():
     }
     filtered, _, _ = apply_guardrails(ReviewResult.from_dict(payload), files, min_confidence=0.5, max_findings=8)
     assert [f.severity for f in filtered.findings] == ["blocker", "suggestion"]
+
+
+def test_test_gaps_are_located_too():
+    files = parse_unified_diff(DIFF)
+    result = ReviewResult.from_dict(MOCK)
+    filtered, dropped, _ = apply_guardrails(result, files, min_confidence=0.6)
+
+    assert len(filtered.test_gaps) == 1
+    gap = filtered.test_gaps[0]
+    assert gap.symbol == "pay"
+    assert len(gap.cases) == 2
+
+    gap_drops = [d for d in dropped if d["kind"] == "test_gap"]
+    assert len(gap_drops) == 1
+    assert "diff" in gap_drops[0]["reason"]
+
+
+def test_test_gaps_are_capped():
+    files = parse_unified_diff(DIFF)
+    payload = {
+        "summary": "",
+        "risk_level": "low",
+        "findings": [],
+        "test_gaps": [
+            {
+                "path": "src/payment/client.py",
+                "symbol": f"fn{i}",
+                "reason": "x",
+                "confidence": 0.9,
+            }
+            for i in range(5)
+        ],
+    }
+    filtered, dropped, _ = apply_guardrails(
+        ReviewResult.from_dict(payload), files, min_confidence=0.5, max_test_gaps=2
+    )
+    assert len(filtered.test_gaps) == 2
+    assert any("上限" in d["reason"] for d in dropped)
+
+
+def test_gap_without_symbol_is_skipped():
+    result = ReviewResult.from_dict({"test_gaps": [{"path": "src/payment/client.py"}]})
+    assert result.test_gaps == []

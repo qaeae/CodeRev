@@ -50,5 +50,24 @@
       "detail": "should be deduped",
       "confidence": 0.8
     }
+  ],
+  "test_gaps": [
+    {
+      "path": "src/main/java/com/acme/order/OrderService.java",
+      "symbol": "pay",
+      "reason": "新增的支付失败分支没有对应测试",
+      "cases": [
+        "Given 支付返回失败 When pay Then 抛出 PaymentException 且订单不落库",
+        "Given 重复提交同一订单 When pay Then 只调用一次支付接口"
+      ],
+      "confidence": 0.75
+    },
+    {
+      "path": "src/not/in/diff.py",
+      "symbol": "ghost",
+      "reason": "路径不在 diff 中，应被丢弃",
+      "cases": [],
+      "confidence": 0.9
+    }
   ]
 }
