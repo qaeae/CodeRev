@@ -8,7 +8,8 @@ branding:
 inputs:
   api-key:
     description: 模型 API key（OpenAI / DeepSeek / 任意兼容接口）
-    required: true
+    required: false
+    default: ""
   provider:
     description: mock 或 openai
     required: false
@@ -18,9 +19,9 @@ inputs:
     required: false
     default: ""
   base-url:
-    description: OpenAI 兼容接口地址
+    description: OpenAI 兼容接口地址（留空则用 .coderev.yml 或环境变量）
     required: false
-    default: "https://api.openai.com/v1"
+    default: ""
   rules:
     description: 规则包路径
     required: false
@@ -33,21 +34,44 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Check configuration
+      shell: bash
+      env:
+        KEY: ${{ inputs.api-key }}
+        MODEL: ${{ inputs.model }}
+        BASE_URL: ${{ inputs.base-url }}
+        PROVIDER: ${{ inputs.provider }}
+      run: |
+        set -uo pipefail
+        if [ -z "${KEY}" ]; then
+          echo "::error title=缺少 api-key::没有拿到模型 key。请确认仓库 Settings → Secrets 中存在名为 CODEREV_API_KEY 的 secret，并在 workflow 里用 secrets.CODEREV_API_KEY 传入。secret 名区分大小写。"
+          exit 1
+        fi
+        if [ "${PROVIDER}" = "openai" ] && [ -z "${MODEL}" ]; then
+          echo "::error title=缺少 model::provider=openai 时必须指定 model，例如 deepseek-chat。"
+          exit 1
+        fi
+        echo "配置检查通过：provider=${PROVIDER} model=${MODEL:-<默认>} base-url=${BASE_URL:-<默认>} key 长度=${#KEY}"
+
     - name: Install CodeRev
       shell: bash
-      run: pip install "${{ github.action_path }}"
+      run: |
+        set -euo pipefail
+        python3 -m pip install --quiet --disable-pip-version-check "${GITHUB_ACTION_PATH}"
+        python3 -c "import sys, coderev; print(f'coderev {coderev.__version__} / python {sys.version.split()[0]}')"
 
     - name: Review pull request
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token || github.token }}
         CODEREV_API_KEY: ${{ inputs.api-key }}
-        CODEREV_MODEL: ${{ inputs.model }}
-        CODEREV_BASE_URL: ${{ inputs.base-url }}
       run: |
+        set -euo pipefail
         coderev pr \
-          --repo "${{ github.repository }}" \
+          --repo "${GITHUB_REPOSITORY}" \
           --pr "${{ github.event.pull_request.number }}" \
           --provider "${{ inputs.provider }}" \
+          --model "${{ inputs.model }}" \
+          --base-url "${{ inputs.base-url }}" \
           --rules "${{ inputs.rules }}" \
           --post
