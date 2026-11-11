@@ -47,10 +47,10 @@
 
 > 任务拆解（可直接提 issue）：[docs/roadmap/v0.3-tasks.md](docs/roadmap/v0.3-tasks.md)
 
-- [ ] `docker compose up` 一键起（Postgres + Redis + app）
+- [x] `docker compose up` 一键起（app + 健康检查；Postgres/Redis 留占位）
 - [ ] GitHub App 模式（自建 App，webhook 验签）
-- [ ] 配置即代码：`.coderev.yml`
-- [ ] 部署文档：Docker / 反代 / 备份
+- [x] 配置即代码：`.coderev.yml`
+- [x] 部署文档：Docker / 反代 / 备份
 
 **验收**：不看源码，只按文档，30 分钟能跑起来。
 

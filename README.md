@@ -68,6 +68,17 @@ jobs:
 
 详见 [部署文档](docs/deploy/action.md)。配置写 `.coderev.yml`（见 [示例](.coderev.example.yml)），优先级：命令行 > 配置文件 > 默认值。
 
+## 自托管（Docker Compose）
+
+```bash
+cp .env.compose.example .env    # 填 CODEREV_API_KEY / MODEL / BASE_URL
+docker compose up -d --build
+curl localhost:8080/healthz     # {"status":"ok","version":"0.2.0"}
+```
+
+当前镜像提供健康检查（`/healthz`、`/readyz`）；接收 GitHub webhook 的常驻服务在 v0.3 后续。
+详见 [docs/deploy/docker.md](docs/deploy/docker.md)。
+
 ---
 
 ## 它解决什么问题

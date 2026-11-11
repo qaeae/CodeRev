@@ -1,0 +1,44 @@
+name: coderev
+
+services:
+  app:
+    build: .
+    image: coderev:local
+    command: ["serve", "--host", "0.0.0.0", "--port", "8080"]
+    ports:
+      - "8080:8080"
+    environment:
+      CODEREV_PROVIDER: ${CODEREV_PROVIDER:-openai}
+      CODEREV_MODEL: ${CODEREV_MODEL:-}
+      CODEREV_BASE_URL: ${CODEREV_BASE_URL:-}
+      CODEREV_API_KEY: ${CODEREV_API_KEY:-}
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - |
+          import urllib.request
+          urllib.request.urlopen("http://127.0.0.1:8080/healthz", timeout=3)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # v0.3 后续：webhook 常驻服务需要队列与状态存储时再启用
+  # db:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-coderev}
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U postgres"]
+  #
+  # redis:
+  #   image: redis:7-alpine
+  #   command: ["redis-server", "--appendonly", "yes"]
+
+# volumes:
+#   pgdata:

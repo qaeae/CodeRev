@@ -198,6 +198,13 @@ def cmd_pr(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_serve(args: argparse.Namespace) -> int:
+    from .server import serve
+
+    serve(args.host, args.port)
+    return 0
+
+
 def cmd_rules(args: argparse.Namespace) -> int:
     if args.rules_command != "validate":
         print("用法：coderev rules validate --path <dir>", file=sys.stderr)
@@ -252,6 +259,11 @@ def build_parser() -> argparse.ArgumentParser:
     validate = rules_sub.add_parser("validate", help="校验规则包")
     validate.add_argument("--path", required=True)
     validate.set_defaults(func=cmd_rules)
+
+    serve_parser = sub.add_parser("serve", help="启动常驻服务（健康检查）")
+    serve_parser.add_argument("--host", default="0.0.0.0")
+    serve_parser.add_argument("--port", type=int, default=8080)
+    serve_parser.set_defaults(func=cmd_serve)
 
     return parser
 
