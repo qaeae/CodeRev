@@ -48,7 +48,7 @@
 | **开源化**：LICENSE / 治理 / 贡献指南 / 路线图 | ✅ 完成（Apache-2.0） |
 | 变更观察期 | ⬜ 未开始 |
 | A 的启动判据（6 条） | ⬜ 0/6 |
-| v0.2 GitHub Action | ⬜ 未开始 |
+| v0.2 GitHub Action | 🟡 核心流水线已跑通（离线 mock），GitHub 集成未接 |
 
 ---
 

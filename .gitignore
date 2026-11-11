@@ -6,6 +6,15 @@ __pycache__/
 .venv/
 node_modules/
 
+# Python 打包与测试产物
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
 # 本地生成物与预览
 .dsh-office-*/
 *.tmp

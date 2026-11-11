@@ -1,0 +1,23 @@
+diff --git a/src/main/java/com/acme/order/OrderService.java b/src/main/java/com/acme/order/OrderService.java
+index 1111111..2222222 100644
+--- a/src/main/java/com/acme/order/OrderService.java
++++ b/src/main/java/com/acme/order/OrderService.java
+@@ -40,6 +40,12 @@ public class OrderService {
+     @Transactional
+     public void pay(Order order) {
++        PaymentResult result = paymentClient.charge(order.getAmount());
++        if (result.isFailed()) {
++            throw new PaymentException("charge failed");
++        }
+         repository.save(order);
+     }
+ }
+diff --git a/src/payment/client.py b/src/payment/client.py
+index 3333333..4444444 100644
+--- a/src/payment/client.py
++++ b/src/payment/client.py
+@@ -10,3 +10,5 @@ class PaymentClient:
+     def charge(self, amount):
+-        return self._post("/charge", {"amount": amount})
++        key = os.environ["PAYMENT_KEY"]
++        return self._post("/charge", {"amount": amount, "key": key})

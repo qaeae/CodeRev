@@ -14,16 +14,27 @@
 
 ---
 
-## v0.2 GitHub Action MVP
+## v0.2 GitHub Action MVP（进行中）
 
 最小可用：一个 workflow 文件，PR 打开就出评论。
 
-- [ ] `action.yml` + 容器镜像
-- [ ] BYOK 配置（OpenAI / Anthropic / DeepSeek 兼容）
-- [ ] diff 拉取 + 结构化输出 + inline 评论
-- [ ] 规则包 v1（Java/Spring、通用安全）
-- [ ] 幂等与去重（同 PR 多次 push 不重复评论）
-- [ ] 单测 + 一个端到端测试仓库
+已完成：
+
+- [x] diff 解析与新增行定位（`diff.py`）
+- [x] 规则加载与匹配，rules-as-code（`rules.py`）
+- [x] 结构化输出 + JSON 校验（`models.py`）
+- [x] 守卫：路径 / 行号 / 置信度 / 去重 / 截断（`validate.py`）
+- [x] Markdown 评论渲染（`render.py`）
+- [x] 模型适配：Mock + OpenAI 兼容（`providers/`）
+- [x] 17 个单测，离线可跑
+- [x] Dockerfile
+
+待完成：
+
+- [ ] GitHub API：拉 PR diff、回写 inline 评论、更新已有评论（幂等）
+- [ ] `action.yml`（composite 或 docker action）
+- [ ] `.coderev.yml` 配置加载（替代一堆命令行参数）
+- [ ] 端到端测试仓库（真实 PR 上跑通）
 
 **验收**：在一个真实仓库里，加 3 行 YAML 就能跑出第一条评论。
 
