@@ -66,7 +66,7 @@ jobs:
 - 每条问题挂一条 **inline 评论**，带文件、行号、规则、置信度；
 - 无法定位或置信度不足的意见**直接丢弃**，不会出现在 PR 里。
 
-详见 [部署文档](docs/deploy/action.md)。配置写 `.coderev.yml`（见 [示例](.coderev.example.yml)），优先级：命令行 > 配置文件 > 默认值。
+详见 [部署文档](docs/deploy/action.md)。配置写 `.coderev.yml`（见 [示例](.coderev.example.yml)），优先级：**命令行 > 环境变量 > 配置文件 > 默认值**。
 
 ## 自托管（Docker Compose）
 

@@ -77,3 +77,44 @@ def test_cli_review_markdown(capsys):
 def test_cli_rules_validate(capsys):
     assert main(["rules", "validate", "--path", str(RULES_DIR)]) == 0
     assert "通过校验" in capsys.readouterr().out
+
+
+def test_env_override_beats_config(capsys, monkeypatch):
+    """CODEREV_MIN_CONFIDENCE=0.9 应把 0.82 分的那条意见过滤掉。"""
+    monkeypatch.setenv("CODEREV_MIN_CONFIDENCE", "0.9")
+    code = main(
+        [
+            "review",
+            "--diff",
+            str(FIXTURES / "example.diff"),
+            "--provider",
+            "mock",
+            "--mock-response",
+            str(FIXTURES / "mock-response.json"),
+            "--rules",
+            str(RULES_DIR),
+        ]
+    )
+    assert code == 0
+    assert '"findings": []' in capsys.readouterr().out
+
+
+def test_cli_flag_beats_env(capsys, monkeypatch):
+    monkeypatch.setenv("CODEREV_MIN_CONFIDENCE", "0.9")
+    code = main(
+        [
+            "review",
+            "--diff",
+            str(FIXTURES / "example.diff"),
+            "--provider",
+            "mock",
+            "--mock-response",
+            str(FIXTURES / "mock-response.json"),
+            "--rules",
+            str(RULES_DIR),
+            "--min-confidence",
+            "0.5",
+        ]
+    )
+    assert code == 0
+    assert "OrderService.java" in capsys.readouterr().out

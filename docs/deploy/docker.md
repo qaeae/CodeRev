@@ -57,6 +57,12 @@ docker compose run --rm app review \
 | `CODEREV_MODEL` | 是 | 如 `deepseek-chat` |
 | `CODEREV_BASE_URL` | 否 | 默认 `https://api.openai.com/v1` |
 | `CODEREV_PROVIDER` | 否 | `openai` / `mock` |
+| `CODEREV_RULES` | 否 | 规则包路径 |
+| `CODEREV_MIN_CONFIDENCE` | 否 | 0–1，默认 0.6 |
+| `CODEREV_MAX_FINDINGS` | 否 | 默认 8 |
+| `CODEREV_POST` | 否 | `true`/`false`，默认 true |
+
+优先级：**命令行 > 环境变量 > `.coderev.yml` > 默认值**。
 
 `docker compose` 会自动读取同目录的 `.env`。
 

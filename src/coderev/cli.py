@@ -66,12 +66,8 @@ def _resolve_provider(args: argparse.Namespace, config: Config) -> Provider:
         return MockProvider.from_file(args.mock_response)
 
     api_key = args.api_key or os.environ.get("CODEREV_API_KEY", "")
-    model = args.model or config.review.model or os.environ.get("CODEREV_MODEL", "")
-    base_url = (
-        args.base_url
-        or config.review.base_url
-        or os.environ.get("CODEREV_BASE_URL", "https://api.openai.com/v1")
-    )
+    model = args.model or config.review.model
+    base_url = args.base_url or config.review.base_url or "https://api.openai.com/v1"
     return OpenAICompatProvider(api_key=api_key, model=model, base_url=base_url)
 
 

@@ -27,6 +27,10 @@
 | Python | 3.11+ | 文档生成脚本、后续后端 |
 | Docker | 24+ | 本地跑 Postgres / Redis（v0.2 起） |
 
+> **Windows 提示**：第一次跑 `docker compose` 前，先确认 `docker version` 能打印出 **Server 版本**。
+> 如果报 `failed to connect to the docker API ... dockerDesktopLinuxEngine`，说明 Docker Desktop 没启动（不是项目问题）——
+> 从开始菜单启动它，等鲸鱼图标变绿，或运行 `docker version` 直到能看到 Server 段。
+
 ### 本地跑起来（v0.2 之后才有）
 
 ```bash

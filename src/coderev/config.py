@@ -1,14 +1,16 @@
-"""`.coderev.yml` loading.
+"""`.coderev.yml` loading + environment overrides.
 
-Config lives with the repo so review policy is reviewable like code.
-CLI flags win over the file; the file wins over defaults.
+Precedence: CLI flags > environment variables > config file > defaults.
+Environment overrides exist so the container image can be configured without
+mounting a file (see docker-compose).
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import os
+from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Mapping
 
 import yaml
 
@@ -31,6 +33,27 @@ class ReviewConfig:
 class Config:
     review: ReviewConfig = field(default_factory=ReviewConfig)
     source: str = "<defaults>"
+    env_overrides: list[str] = field(default_factory=list)
+
+
+def _parse_bool(raw: str) -> bool:
+    value = raw.strip().lower()
+    if value in {"1", "true", "yes", "on"}:
+        return True
+    if value in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError("布尔值只接受 true/false、1/0、yes/no、on/off")
+
+
+ENV_FIELDS: dict[str, tuple[str, Callable[[str], Any]]] = {
+    "CODEREV_PROVIDER": ("provider", str),
+    "CODEREV_MODEL": ("model", str),
+    "CODEREV_BASE_URL": ("base_url", str),
+    "CODEREV_RULES": ("rules", str),
+    "CODEREV_MIN_CONFIDENCE": ("min_confidence", float),
+    "CODEREV_MAX_FINDINGS": ("max_findings", int),
+    "CODEREV_POST": ("post", _parse_bool),
+}
 
 
 def find_config(start: Path) -> Path | None:
@@ -41,12 +64,50 @@ def find_config(start: Path) -> Path | None:
     return None
 
 
-def load_config(path: str | Path | None = None, start: Path | None = None) -> Config:
+def apply_env_overrides(config: Config, env: Mapping[str, str] | None = None) -> Config:
+    """Overlay CODEREV_* environment variables onto a config."""
+    source = os.environ if env is None else env
+    review = config.review
+    applied: list[str] = []
+
+    for key, (field_name, parser) in ENV_FIELDS.items():
+        raw = source.get(key)
+        if raw is None or str(raw).strip() == "":
+            continue
+        try:
+            value = parser(str(raw).strip())
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{key}={raw!r} 无效：{exc}") from exc
+        review = replace(review, **{field_name: value})
+        applied.append(key)
+
+    if not applied:
+        return config
+    return Config(review=review, source=config.source, env_overrides=applied)
+
+
+def _validate(review: ReviewConfig, where: str) -> None:
+    if not 0 <= review.min_confidence <= 1:
+        raise ValueError(f"{where}: min_confidence 必须在 0 到 1 之间")
+    if review.max_findings < 1:
+        raise ValueError(f"{where}: max_findings 必须大于 0")
+    if not review.provider:
+        raise ValueError(f"{where}: provider 不能为空")
+
+
+def load_config(
+    path: str | Path | None = None,
+    start: Path | None = None,
+    env: Mapping[str, str] | None = None,
+) -> Config:
     """Load config from an explicit path, else search `start` (default: cwd)."""
     if path is None:
-        path = find_config(start or Path.cwd())
-        if path is None:
-            return Config()
+        found = find_config(start or Path.cwd())
+        if found is None:
+            config = apply_env_overrides(Config(), env)
+            _validate(config.review, config.source)
+            return config
+        path = found
 
     file = Path(path)
     data = yaml.safe_load(file.read_text(encoding="utf-8")) or {}
@@ -74,17 +135,15 @@ def load_config(path: str | Path | None = None, start: Path | None = None) -> Co
         post=bool(review_data.get("post", defaults.post)),
     )
 
-    if not 0 <= review.min_confidence <= 1:
-        raise ValueError(f"{file}: min_confidence 必须在 0 到 1 之间")
-    if review.max_findings < 1:
-        raise ValueError(f"{file}: max_findings 必须大于 0")
-
-    return Config(review=review, source=str(file))
+    config = apply_env_overrides(Config(review=review, source=str(file)), env)
+    _validate(config.review, config.source)
+    return config
 
 
 def as_dict(config: Config) -> dict[str, Any]:
     return {
         "source": config.source,
+        "env_overrides": config.env_overrides,
         "review": {
             "provider": config.review.provider,
             "model": config.review.model,
