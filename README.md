@@ -54,8 +54,8 @@ A 单独做只是"又一个审查工具"；接上 B 的「变更 ↔ 模块 ↔ 
 | 30 分钟了解全貌 | [项目全貌](docs/00-overview.md) |
 | 第一次参与 | [新人上手](docs/onboarding.md) |
 | 看产品终局 | [平台愿景](docs/design/platform-vision.md) |
-| 看审查引擎设计 | [PR 审查 PRD](https://github.com/qaeae/CodeRev/blob/feat/a-pr-review/docs/a/prd-pr-review.md) |
-| 看变更流程设计 | [变更管理设计](https://github.com/qaeae/CodeRev/blob/feat/b-change-trace/docs/b/01-change-management-design.md) |
+| 看审查引擎设计 | [PR 审查 PRD](docs/a/prd-pr-review.md) |
+| 看变更流程设计 | [变更管理设计](docs/b/01-change-management-design.md) |
 | 看开源化改造 | [开源化改造](docs/design/open-source-pivot.md) |
 | 知道下一步做什么 | [路线图](ROADMAP.md) |
 
@@ -73,9 +73,9 @@ A 单独做只是"又一个审查工具"；接上 B 的「变更 ↔ 模块 ↔ 
 
 | 分支 | 内容 |
 |---|---|
-| `main` | 门户文档与索引，只接受评审后的合并 |
-| `feat/a-pr-review` | A 轨道：PR 审查 |
-| `feat/b-change-trace` | B 轨道：变更追溯 |
+| `main` | 主干：门户 + A/B 两份轨道内容；只接受评审后的合并 |
+| `feat/a-pr-review` | A 轨道工作分支 |
+| `feat/b-change-trace` | B 轨道工作分支 |
 
 从子分支切工作分支，不要直接改子分支；合并到 `main` 由 maintainer 执行。
 
