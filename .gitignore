@@ -33,3 +33,5 @@ config/server.yml
 
 # 生成脚本（本地保留，不入库）
 tools/
+.webhook-secret.tmp
+

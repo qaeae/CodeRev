@@ -38,6 +38,7 @@
 | [action.md](deploy/action.md) | GitHub Action，3 行 YAML 接入 |
 | [docker.md](deploy/docker.md) | Docker Compose 自托管、环境变量、排错 |
 | [webhook.md](deploy/webhook.md) | 常驻服务 + GitHub webhook + 公网地址 |
+| [local-webhook-test.md](deploy/local-webhook-test.md) | 没有公网 IP 时用 cloudflared 隧道联调 |
 
 ---
 
